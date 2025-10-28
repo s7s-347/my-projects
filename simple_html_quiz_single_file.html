@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quick Quiz — HTML</title>
+  <style>
+    :root { --bg:#0f172a; --card:#111827; --text:#e5e7eb; --muted:#9ca3af; --accent:#22c55e; --danger:#ef4444; }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif; background:linear-gradient(180deg,#0b1220,#0f172a 40%); color:var(--text)}
+    .wrap{max-width:900px;margin:48px auto;padding:24px}
+    .card{background:linear-gradient(180deg,#0b0f1a, #111827); border:1px solid #1f2937; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    header{padding:28px 28px 0}
+    header h1{margin:0 0 6px;font-size:28px;letter-spacing:.3px}
+    header p{margin:0 0 18px;color:var(--muted)}
+    .content{padding:0 28px 28px}
+    fieldset{margin:18px 0 22px;padding:18px;border:1px solid #243244;border-radius:12px}
+    legend{padding:0 6px;color:#cbd5e1;font-weight:600}
+    .choice{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;transition:background .2s ease}
+    .choice:hover{background:#0b1220}
+    .choice input{margin-top:3px}
+    .muted{color:var(--muted)}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    button{cursor:pointer;border:0;border-radius:12px;padding:12px 16px;font-weight:600}
+    .primary{background:#2563eb;color:white}
+    .ghost{background:transparent;color:#cbd5e1;border:1px solid #334155}
+    .tag{display:inline-block;border:1px solid #334155;border-radius:999px;padding:6px 10px;font-size:12px;color:#cbd5e1}
+    .correct{border-color:rgba(34,197,94,.6)!important;background:rgba(34,197,94,.08)}
+    .incorrect{border-color:rgba(239,68,68,.6)!important;background:rgba(239,68,68,.06)}
+    .explanation{margin-top:8px;color:#a7f3d0}
+    .results{margin-top:10px;border-top:1px dashed #334155;padding-top:14px}
+    progress{width:100%;height:14px}
+    .footer{padding:18px 28px;border-top:1px solid #1f2937;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+    a{color:#93c5fd}
+    .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" role="region" aria-labelledby="quiz-title">
+      <header>
+        <h1 id="quiz-title">Quick Quiz</h1>
+        <p class="muted">Answer the questions below and click <strong>Grade Quiz</strong>. You can edit or add questions inside the script — no libraries needed.</p>
+      </header>
+
+      <div class="content">
+        <div id="meta" class="row" aria-live="polite"></div>
+        <div id="quiz" class="quiz" role="group" aria-describedby="quiz-help"></div>
+        <p id="quiz-help" class="sr-only">Each question has multiple choices. Use the arrow keys to move between options, space or enter to select.</p>
+        <div class="row">
+          <button id="gradeBtn" class="primary" type="button">Grade Quiz</button>
+          <button id="resetBtn" class="ghost" type="button">Reset</button>
+        </div>
+        <div class="results" id="results" aria-live="polite"></div>
+      </div>
+      <div class="footer">
+        <span class="tag" id="countTag">0 Questions</span>
+        <div style="min-width:220px;flex:1">
+          <progress id="progress" value="0" max="100" aria-label="Score progress"></progress>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // === 1) Configure your questions here ===
+    // Add, remove, or edit questions. 'answer' is the 0-based index of the right choice.
+    const QUESTIONS = [
+  {id: 1, text: "What does LLM stand for?", choices: ["Large Language Model","Low-Level Memory","Linked Language Matrix","Long Logic Machine"], answer: 0, explanation: "LLM = Large Language Model."},
+  {id: 2, text: "Which neural architecture underpins most modern LLMs?", choices: ["Recurrent nets","Transformers","Decision trees","K-means"], answer: 1, explanation: "Transformers with self-attention are the core."},
+  {id: 3, text: "What is tokenization in NLP?", choices: ["Removing stopwords","Breaking text into units","Encrypting text","Balancing datasets"], answer: 1, explanation: "Tokens are words/subwords used by models."},
+  {id: 4, text: "During pretraining, an LLM typically learns by…", choices: ["Classifying images","Predicting next tokens","Solving equations","Executing programs"], answer: 1, explanation: "Language models optimize next-token prediction."},
+  {id: 5, text: "What is instruction tuning?", choices: ["Compressing weights","Training to follow natural-language tasks","Removing biases","Adding more layers"], answer: 1, explanation: "Fine-tuning on instruction/response pairs."},
+  {id: 6, text: "What does temperature control in LLM decoding affect?", choices: ["Model size","Response randomness","Training speed","Memory usage"], answer: 1, explanation: "Lower temperature → more deterministic."},
+  {id: 7, text: "What is a RAG system?", choices: ["Random Auto-Generation","Retrieval-Augmented Generation","Rule-Assisted Grammar","Reinforced Agent Graph"], answer: 1, explanation: "Combine retrieval with generation to ground outputs."},
+  {id: 8, text: "Which retrieval algorithm is keyword-based?", choices: ["BM25","BGE-M3 embeddings","Cross-encoder reranker","LoRA"], answer: 0, explanation: "BM25 is a classic lexical scorer."},
+  {id: 9, text: "Embeddings like BGE-M3 are used to…", choices: ["Render HTML","Map text to vectors","Store PDFs","Encrypt data"], answer: 1, explanation: "They place texts in a semantic vector space."},
+  {id: 10, text: "A cross-encoder reranker (e.g., bge-reranker-v2-m3) is used to…", choices: ["Generate final answers","Re-score top candidates jointly","Index documents","Compress parameters"], answer: 1, explanation: "Cross-encoders judge query-passage pairs for precision."},
+  {id: 11, text: "In the Bayan project, which model is the main generator?", choices: ["GPT-2","Llama-3.1-8B-Instruct","Qwen-2.5-7B-Instruct","BGE-M3"], answer: 1, explanation: "Llama-3.1-8B-Instruct is primary."},
+  {id: 12, text: "Which model is used as backup/A/B in Bayan?", choices: ["Qwen-2.5-7B-Instruct","BGE-M3","GPT-Neo","T5"], answer: 0, explanation: "Qwen-2.5-7B-Instruct complements the main model."},
+  {id: 13, text: "Why is randomness turned off in Bayan’s generators when citing sources?", choices: ["For faster GPUs","To ensure consistent, safer outputs","To save memory","To allow longer contexts"], answer: 1, explanation: "Determinism improves reliability with citations."},
+  {id: 14, text: "In Bayan, Quran and Hadith are…", choices: ["Generated by the LLM","Pulled verbatim from a database","Summarized loosely","Translated automatically"], answer: 1, explanation: "They are shown exactly as published."},
+  {id: 15, text: "What hybrid retrieval stack does Bayan use?", choices: ["TF-IDF only","BM25 + BGE-M3 + cross-encoder","BM25 only","Embeddings only"], answer: 1, explanation: "Hybrid of lexical + dense + reranker."},
+  {id: 16, text: "What is the goal of guardrails in Bayan?", choices: ["Speed up GPU compute","Politely refuse when unsupported","Translate Arabic to English","Auto-fine-tune the LLM"], answer: 1, explanation: "System defers if no suitable passage exists."},
+  {id: 17, text: "Tool-calling prompts in Bayan provide…", choices: ["Random examples","Structured IDs/titles/evidence spans","GPU metrics","Browser automation"], answer: 1, explanation: "They constrain the model to specific evidence."},
+  {id: 18, text: "Which small model is fine-tuned with LoRA in Bayan?", choices: ["The main generator","A compact Arabic classifier","The reranker","BM25"], answer: 1, explanation: "Classifier improves intent/query phrasing."},
+  {id: 19, text: "Why avoid fine-tuning generators on religious content?", choices: ["To reduce latency only","To keep them neutral and source-faithful","Because it is impossible","To increase hallucinations"], answer: 1, explanation: "Prevents style imitation and preserves evidence fidelity."},
+  {id: 20, text: "BGE-M3 helps with Arabic because it can…", choices: ["Compile code","Normalize scripts/diacritics and handle variants","Render images","Translate audio"], answer: 1, explanation: "Robust to Arabic orthographic variations."},
+  {id: 21, text: "Primary purpose of Llama-3.1-8B in Bayan?", choices: ["Database indexing","Summarize and compose answers","Vector search","Front-end rendering"], answer: 1, explanation: "It generates responses from retrieved context."},
+  {id: 22, text: "Qwen-2.5-7B helps by…", choices: ["Improving Arabic style/fluency","Serving as the BM25 scorer","Storing embeddings","Hosting the UI"], answer: 0, explanation: "Used for A/B and Arabic expressiveness."},
+  {id: 23, text: "Which stage converts user text to vectors?", choices: ["BM25","Embedding model","Reranker","Generator"], answer: 1, explanation: "Embeddings map text into vector space."},
+  {id: 24, text: "What does BM25 primarily match on?", choices: ["Semantics","Keywords/terms","Syntax trees","Character shapes"], answer: 1, explanation: "Term-frequency/Inverse-document-frequency."},
+  {id: 25, text: "Why combine BM25 with embeddings?", choices: ["Redundancy only","To balance precision and recall","To replace guardrails","For GPU overclocking"], answer: 1, explanation: "Lexical + semantic signals are complementary."},
+  {id: 26, text: "Cross-encoders differ from bi-encoders because they…", choices: ["Encode query and doc separately","Score them jointly in one pass","Are unsupervised","Only work for English"], answer: 1, explanation: "Joint scoring boosts precision at rerank stage."},
+  {id: 27, text: "What does a low temperature (≈0) decoding do?", choices: ["More creative outputs","More deterministic outputs","Longer outputs","Faster training"], answer: 1, explanation: "Reduces randomness."},
+  {id: 28, text: "Instruction-tuned chat models are optimized to…", choices: ["Compress files","Follow user prompts and tasks","Compile code","Scrape the web"], answer: 1, explanation: "They follow instructions more reliably."},
+  {id: 29, text: "In RAG, where should citations come from?", choices: ["The model’s memory","Retrieved sources","Random samples","User guesses"], answer: 1, explanation: "Cite the exact retrieved passages."},
+  {id: 30, text: "What triggers a refusal in Bayan?", choices: ["Low GPU memory","No suitable passage in retrieval","User language is Arabic","Too many citations"], answer: 1, explanation: "Defers if it cannot ground the answer."},
+  {id: 31, text: "Which component ensures evidence is shown exactly as published?", choices: ["Generator sampling","UI rendering with stored quotes","Automatic paraphrase","OCR"], answer: 1, explanation: "Quotes are displayed verbatim from DB."},
+  {id: 32, text: "What advantage does Llama-3.1-8B bring per the proposal?", choices: ["Monolingual only","Strong Arabic + single-GPU efficiency","Requires TPU","Needs internet access"], answer: 1, explanation: "Chosen for Arabic fluency and efficiency."},
+  {id: 33, text: "What is the role of the Arabic classifier?", choices: ["Answer generation","Intent detection and query rewrite","Ranking passages","UI styling"], answer: 1, explanation: "Refines queries into jurisprudential terms."},
+  {id: 34, text: "Why keep generation separate from evidence retrieval?", choices: ["To increase hallucinations","To preserve wording integrity and verifiability","To slow responses","To avoid citations"], answer: 1, explanation: "Separation keeps answers faithful to sources."},
+  {id: 35, text: "Which stack component handles mixed scripts and spelling variants?", choices: ["BM25","BGE-M3","UI","HTML"], answer: 1, explanation: "BGE-M3 is robust to such variation."},
+  {id: 36, text: "What is a benefit of A/B testing two generators?", choices: ["Lowers storage","Provides complementary styles/behaviors","Enables BM25","Removes need for reranking"], answer: 1, explanation: "Choose safer or clearer outputs at runtime."},
+  {id: 37, text: "Self-attention lets a model…", choices: ["Ignore context","Focus on relevant tokens in context","Only read first token","Sort tokens alphabetically"], answer: 1, explanation: "Core mechanism of transformers."},
+  {id: 38, text: "Why are direct Quran/Hadith generations avoided?", choices: ["Licensing","To avoid fabrication; use exact stored quotes","Performance","No Arabic support"], answer: 1, explanation: "Ensures authenticity."},
+  {id: 39, text: "Which of the following is NOT part of the Bayan retrieval pipeline?", choices: ["BM25","BGE-M3 embeddings","Cross-encoder reranker","Image captioning"], answer: 3, explanation: "Image captioning isn’t used."},
+  {id: 40, text: "What best describes the project’s overall goal?", choices: ["Creative storytelling","Accurate Arabic fatwa answers grounded in Ibn Baz’s texts","Real-time translation of videos","Code generation"], answer: 1, explanation: "Trustworthy, verifiable religious QA in Arabic."}
+];
+
+    // === 2) Utility helpers ===
+    const $ = (sel, el = document) => el.querySelector(sel);
+    const $$ = (sel, el = document) => Array.from(el.querySelectorAll(sel));
+
+    function shuffle(array) {
+      // Fisher–Yates (optional): set SHUFFLE = false to disable
+      const arr = array.slice();
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // === 3) Render quiz ===
+    const SHUFFLE_CHOICES = true; // toggle if you want stable order
+
+    function renderQuiz() {
+      const quizEl = $('#quiz');
+      quizEl.innerHTML = '';
+      QUESTIONS.forEach((q, qi) => {
+        const choices = SHUFFLE_CHOICES ? shuffle(q.choices) : q.choices.slice();
+        const correctLabel = q.choices[q.answer];
+        const fs = document.createElement('fieldset');
+        fs.setAttribute('aria-labelledby', `q${q.id}-legend`);
+        fs.dataset.correct = correctLabel;
+
+        const legend = document.createElement('legend');
+        legend.id = `q${q.id}-legend`;
+        legend.textContent = `${qi + 1}. ${q.text}`;
+        fs.appendChild(legend);
+
+        choices.forEach((label, ci) => {
+          const id = `q${q.id}-c${ci}`;
+          const wrap = document.createElement('label');
+          wrap.className = 'choice';
+          wrap.setAttribute('for', id);
+
+          const input = document.createElement('input');
+          input.type = 'radio';
+          input.name = `q${q.id}`;
+          input.id = id;
+          input.value = label;
+          input.required = true;
+
+          const span = document.createElement('span');
+          span.innerHTML = label.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+          wrap.appendChild(input);
+          wrap.appendChild(span);
+          fs.appendChild(wrap);
+        });
+
+        quizEl.appendChild(fs);
+      });
+
+      // Meta info
+      $('#countTag').textContent = `${QUESTIONS.length} Question${QUESTIONS.length>1?'s':''}`;
+      $('#meta').innerHTML = `<span class="muted">Tip: You can edit questions in the <code>QUESTIONS</code> array.</span>`;
+    }
+
+    // === 4) Grade quiz ===
+    function gradeQuiz() {
+      let correct = 0;
+      const fieldsets = $$('#quiz fieldset');
+
+      fieldsets.forEach(fs => {
+        fs.classList.remove('correct','incorrect');
+        const selected = $('input:checked', fs);
+        const chosen = selected ? selected.value : null;
+        const isRight = chosen === fs.dataset.correct;
+        if (isRight) {
+          fs.classList.add('correct');
+          correct++;
+        } else {
+          fs.classList.add('incorrect');
+        }
+        // Add or update explanation
+        let expl = $('.explanation', fs);
+        if (!expl) {
+          expl = document.createElement('div');
+          expl.className = 'explanation';
+          fs.appendChild(expl);
+        }
+        const match = QUESTIONS.find(q => q.choices[q.answer] === fs.dataset.correct);
+        expl.textContent = match?.explanation || '';
+      });
+
+      const score = Math.round((correct / fieldsets.length) * 100) || 0;
+      $('#progress').value = score;
+      $('#results').innerHTML = `<strong>Score:</strong> ${score}% — ${correct}/${fieldsets.length} correct.`;
+      return score;
+    }
+
+    function resetQuiz() {
+      $('#quiz').reset?.(); // if it's a <form>, but we used div; fall back below
+      $$('#quiz input[type="radio"]').forEach(el => el.checked = false);
+      $$('#quiz fieldset').forEach(fs => fs.classList.remove('correct','incorrect'));
+      $('#results').textContent = '';
+      $('#progress').value = 0;
+    }
+
+    // === 5) Wire up events ===
+    $('#gradeBtn').addEventListener('click', gradeQuiz);
+    $('#resetBtn').addEventListener('click', resetQuiz);
+
+    // Initial render
+    renderQuiz();
+  </script>
+</body>
+</html>
